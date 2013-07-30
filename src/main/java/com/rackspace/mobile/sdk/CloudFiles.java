@@ -44,7 +44,7 @@ public class CloudFiles {
 	private String xAuthToken;
 	private String xStorageUrl;
 
-	private boolean debug=false;
+	private boolean debug=true;
 
 	public CloudFiles(String username, String apiKey){
 		this.username=username;
@@ -58,8 +58,7 @@ public class CloudFiles {
 		this.xStorageUrl=authMap.get("X-Storage-Url");
 	}
 
-	public String uploadFile(String container, List<File> theFiles)throws NullPointerException,
-	CloudFileHttpResponseException{
+	public String uploadFile(String container, List<File> theFiles)throws CloudFileHttpResponseException{
 		String METHOD_NAME="uploadFile()";
 		String retVal="";
 		if(debug){
@@ -99,10 +98,10 @@ public class CloudFiles {
 		}
 		else{
 			if(this.xAuthToken==null||this.xAuthToken.isEmpty()){
-				throw new NullPointerException("NullPointerException from CloudFiles.uploadFile(): xAuthToken is null or empty");
+				throw new CloudFileHttpResponseException("CloudFileHttpResponseException from CloudFiles.uploadFile(): xAuthToken is null or empty");
 			}
 			if(this.xStorageUrl==null||this.xStorageUrl.isEmpty()){
-				throw new NullPointerException("NullPointerException from CloudFiles.uploadFile(): xStorageUrl is null or empty");
+				throw new CloudFileHttpResponseException("CloudFileHttpResponseException from CloudFiles.uploadFile(): xStorageUrl is null or empty");
 			}
 		}
 		return retVal;
@@ -242,7 +241,6 @@ public class CloudFiles {
 				}
 				throw new CloudFileHttpResponseException(e);
 			}
-
 		}
 		Log.e(METHOD_NAME, ": END:");
 		if(null!=retVal){
@@ -251,7 +249,11 @@ public class CloudFiles {
 		return retVal;
 	}
 
-	public List<ACloudFile>getFilesInContainer(String container)throws NullPointerException{
+	public List<ACloudFile>getFilesInContainer(String container)throws CloudFileHttpResponseException{
+		String METHOD_NAME="CloudFiles.getFilesInContainer()";
+		if(debug){
+			Log.d(METHOD_NAME, ": START: container="+container);
+		}
 		List<ACloudFile>retVal=new ArrayList<ACloudFile>();
 		
 		JSONArray jsonArr=listFilesForContainer(container);
@@ -259,13 +261,29 @@ public class CloudFiles {
 			JSONObject aJsonObj;
 			try {
 				aJsonObj = jsonArr.getJSONObject(i);
-				ACloudFile aFile=new ACloudFile(aJsonObj.getString("hash"), aJsonObj.getString("last_modified"), 
-						aJsonObj.getString("bytes"), aJsonObj.getString("name"), aJsonObj.getString("content_type"));
+				String hash=aJsonObj.getString("hash");
+				String lastModified=aJsonObj.getString("last_modified");
+				String bytes=aJsonObj.getString("bytes");
+				String name=aJsonObj.getString("name");
+				String contentType=aJsonObj.getString("content_type");
+				if(debug){
+					Log.d(METHOD_NAME, " hash="+hash);
+					Log.d(METHOD_NAME, " lastModified="+lastModified);
+					Log.d(METHOD_NAME, " bytes="+bytes);
+					Log.d(METHOD_NAME, " name="+name);
+					Log.d(METHOD_NAME, " contentType="+contentType);
+				}				
+				ACloudFile aFile=new ACloudFile(hash, lastModified, bytes, name, contentType);
 				retVal.add(aFile);
 			} 
-			catch (JSONException e) {
-				// TODO Auto-generated catch block
+			catch (JSONException e) {				
 				e.printStackTrace();
+				Log.e(METHOD_NAME, "JSONException caught: "+e.getMessage());
+				throw new CloudFileHttpResponseException("JSON Error: "+e.getMessage());
+			}
+			catch(Throwable e){
+				Log.e(METHOD_NAME, "Throwable caught: "+e.getMessage());
+				throw new CloudFileHttpResponseException("Throwable JSON Error: "+e.getMessage());				
 			}
 
 		}
@@ -273,8 +291,8 @@ public class CloudFiles {
 		return retVal;
 	}
 
-	public JSONArray listFilesForContainer(String container)throws NullPointerException{
-		String METHOD_NAME="listFilesForContainer()";
+	public JSONArray listFilesForContainer(String container)throws CloudFileHttpResponseException{
+		String METHOD_NAME="CloudFiles.listFilesForContainer()";
 		if(debug){
 			Log.d(METHOD_NAME,": START:");
 		}
@@ -320,7 +338,7 @@ public class CloudFiles {
 					if(debug){
 						Log.d(METHOD_NAME,": responseCode="+responseCode);
 					}
-					throw new RuntimeException(METHOD_NAME+": Failed: HTTP error code: "+responseCode);
+					throw new CloudFileHttpResponseException("Failed: HTTP error code: "+responseCode+" ");
 				}
 
 				StringBuffer retBuff=new StringBuffer("");
@@ -338,38 +356,40 @@ public class CloudFiles {
 					retVal=new JSONArray(retBuff.toString());
 				} 
 				catch (JSONException e) {
-					e.printStackTrace();
-					if(debug){
-						Log.d(METHOD_NAME," JSONException caught: ",e);
-					}
+					e.printStackTrace();					
+					Log.e(METHOD_NAME," JSONException caught: ",e);
+					throw new CloudFileHttpResponseException("JSON error: "+e.getMessage());
+					
 				}				
 			} 
 			catch (MalformedURLException e) {
 				e.printStackTrace();
-				if(debug){
-					Log.d(METHOD_NAME," MalformedURLException caught: ",e);
-				}
+				Log.e(METHOD_NAME," MalformedURLException caught: ",e);
+				throw new CloudFileHttpResponseException("MalformedURL error: "+e.getMessage());
 			}
 			catch (ProtocolException e) {
 				e.printStackTrace();
-				if(debug){
-					Log.d(METHOD_NAME," ProtocolException caught: ",e);
-				}
+				Log.e(METHOD_NAME," ProtocolException caught: ",e);
+				throw new CloudFileHttpResponseException("Protocol error: "+e.getMessage());
 			}
 			catch(IOException e){
 				e.printStackTrace();
-				if(debug){
-					Log.d(METHOD_NAME," IOException caught: ",e);
-				}
+				Log.e(METHOD_NAME," IOException caught: ",e);
+				throw new CloudFileHttpResponseException("IO error: "+e.getMessage());
+			}
+			catch(Throwable e){
+				e.printStackTrace();
+				Log.e(METHOD_NAME," IOException caught: ",e);
+				throw new CloudFileHttpResponseException("Throwable error: "+e.getMessage());				
 			}
 
 		}
 		else{
 			if(this.xAuthToken==null||this.xAuthToken.isEmpty()){
-				throw new NullPointerException("NullPointerException from CloudFiles."+METHOD_NAME+": xAuthToken is null or empty");
+				throw new CloudFileHttpResponseException(METHOD_NAME+": xAuthToken is null or empty");
 			}
 			if(this.xStorageUrl==null||this.xStorageUrl.isEmpty()){
-				throw new NullPointerException("NullPointerException from CloudFiles."+METHOD_NAME+": xStorageUrl is null or empty");
+				throw new CloudFileHttpResponseException(METHOD_NAME+": xStorageUrl is null or empty");
 			}			
 		}
 		if(debug){
@@ -379,7 +399,7 @@ public class CloudFiles {
 	}
 	
 	public List<Container> getContainers()throws CloudFileHttpResponseException{
-		String METHOD_NAME="getContainers()";
+		String METHOD_NAME="CloudFiles.getContainers()";
 		if(debug){
 			Log.d(METHOD_NAME,": START : this.xStorageUrl="+this.xStorageUrl);
 		}		
@@ -426,14 +446,23 @@ public class CloudFiles {
 					}		
 					inny.close();
 					try {
-						System.out.println(retBuff.toString());
+						if(debug){
+							Log.d(METHOD_NAME,"~~~~~~~~~~~retBuff.toString()=\n"+retBuff.toString());
+						}
+
 						JSONArray containersJson=new JSONArray(retBuff.toString());
+						if(debug){
+							Log.d(METHOD_NAME,": containersJson.length="+containersJson.length());
+						}
 						for(int i=0;i<containersJson.length();++i){
 							JSONObject aContainerJsonObj=containersJson.getJSONObject(i);
 							ContainerSaxHandler.Container container=new ContainerSaxHandler().new Container();
 							container.setName(null);
 							container.setCount(null);
 							container.setBytes(null);
+							if(debug){
+								Log.d(METHOD_NAME,": aContainerJsonObj.getString(\"name\")="+aContainerJsonObj.getString("name"));
+							}
 							if(aContainerJsonObj.has("name")){
 							    container.setName(aContainerJsonObj.getString("name"));
 							}

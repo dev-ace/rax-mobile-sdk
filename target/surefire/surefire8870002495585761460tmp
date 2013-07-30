@@ -1,5 +1,5 @@
 #surefire
-#Wed Jul 24 15:25:07 CDT 2013
+#Tue Jul 30 15:35:08 CDT 2013
 dirscanner.0.params=/Users/thu4404/Documents/android/rax-mobile-sdk/target/test-classes|[**/Test*.java, **/*Test.java, **/*TestCase.java]|[**/*$*]
 enableAssertions=true
 testSuiteDefinitionTestSourceDirectory=/Users/thu4404/Documents/android/rax-mobile-sdk/src/test/java
