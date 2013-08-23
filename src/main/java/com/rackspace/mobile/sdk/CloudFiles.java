@@ -131,10 +131,12 @@ public class CloudFiles {
 		int responseCode;
 		try {
 			if(null==this.username){
-				this.username="mossoths";
+				//Change to actual user name
+				this.username="*******";
 			}
 			if(null==this.apiKey){
-				this.apiKey="99b917af206ae042f3291264e0b78a84";
+				//Change to actual apikey
+				this.apiKey="********";
 			}
 
 			URL theURL = new URL("https://identity.api.rackspacecloud.com/v1.0");
